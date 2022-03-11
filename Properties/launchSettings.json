@@ -1,0 +1,15 @@
+﻿{
+  "profiles": {
+    "WebApiTester": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "home/index",
+      "applicationUrl": "https://localhost:57777/",
+      "environmentVariables": {
+        "ASPNETCORE_URLS": "http://localhost:57776;https://localhost:57777",
+        "ASPNETCORE_HTTPS_PORT": "57777",
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

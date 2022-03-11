@@ -1,0 +1,227 @@
+﻿@model Request
+@{
+    ViewData["Title"] = "Home Page";
+}
+<style>
+    .jsonContainer {
+        height:37em !important;
+        resize:none !important;
+    }
+    .loader {
+        border: 16px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 16px solid #3498db;
+        width: 120px;
+        height: 120px;
+        -webkit-animation: spin 2s linear infinite; /* Safari */
+        animation: spin 2s linear infinite;
+        position:absolute;
+        top: 50%;
+        left: 40%;
+    }
+
+    /* Safari */
+    @@-webkit-keyframes spin {
+        0% { -webkit-transform: rotate(0deg); }
+        100% { -webkit-transform: rotate(360deg); }
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+@using (Html.BeginForm("","", FormMethod.Post, new { id = "frmCompare" }))
+{
+<div class="row">
+    <div class="col-2">
+        <div class="mb-3">
+            <label class="form-label">Token</label>
+            <input id="txtToken" type="text" class="form-control" />
+        </div>
+    </div>
+    <div class="col-10">
+        <div class="row">
+            <div class="col-8">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.CompileUrlLeft, null, new { @class = "form-label" })
+                            <div class="input-group">
+                                @Html.TextBoxFor(m => m.CompileUrlLeft, new { @class = "form-control" })
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary btnCompile" side="Left">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.UrlLeft, null, new { @class = "form-label" })
+                            <div class="input-group">
+                                @Html.TextBoxFor(m => m.UrlLeft, new { @class = "form-control" })
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary btnRequest" side="Left">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.jsonLeft, null, new { @class = "form-label" })
+                            <div class="input-group">
+                                @Html.TextAreaFor(m => m.jsonLeft, new { @class = "form-control jsonContainer" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.CompileUrlRight, null, new { @class = "form-label" })
+                            <div class="input-group">
+                                @Html.TextBoxFor(m => m.CompileUrlRight, new { @class = "form-control" })
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary btnCompile" side="Right">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.UrlRight, null, new { @class = "form-label" })
+                            <div class="input-group">
+                                @Html.TextBoxFor(m => m.UrlRight, new { @class = "form-control" })
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary btnRequest" side="Right">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.jsonRight, null, new { @class = "form-label" })
+                            @Html.TextAreaFor(m => m.jsonRight, new { @class = "form-control jsonContainer" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="mb-3">
+                    <label class="form-label">Result</label>
+                    <textarea id="txtResult" class="form-control jsonContainer" style="height:48em !important"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <input type="button" value="Compare" id="btnCompare" class="btn btn-primary" />
+        </div>
+    </div>
+</div>
+<div class="loader" style="display:none;"></div>
+
+}
+
+@section Scripts{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#btnCompare').click(function () {
+                Compare();
+            });
+            $('.btnCompile').click(function () {
+                const side = $(this).attr('side');
+                const txtbox = $('#CompileUrl' + side);
+                const url = txtbox.val();
+                CompileData(url);
+
+            });
+            $('.btnRequest').click(function () {
+                const side = $(this).attr('side');
+                const txtbox = $('#Url' + side);
+                const txtarea = $('#json' + side);
+                const url = txtbox.val();
+                txtarea.val("");
+                GetData(url, txtarea.attr('id'));
+            });
+        });
+
+        function GetData(url, container) {
+            $(".loader").show();
+            $.when(AjaxGetData(url))
+                .then(
+                    function (data) {
+                        const json = JSON.stringify(data, undefined, 4);
+                        $('#' + container).val(json);
+                    },
+                    function (err) {
+                        alert(err.responseJSON);
+                    }
+                ).
+                done(function () {
+                    $(".loader").hide();
+                });
+        }
+
+        function Compare() {
+            $(".loader").show();
+            $.when(AjaxCompare())
+                .then(
+                    function (data) {
+                        if (data.status) {
+                            const json = JSON.parse(data.msg);
+                            $('#txtResult').val(JSON.stringify(json, undefined, 4));
+                        } else {
+                            $('#txtResult').val(data.msg);
+                        }
+                    },
+                    function (err) {
+                        alert(err.responseJSON);
+                    }
+                ).
+                done(function () {
+                    $(".loader").hide();
+                });
+        }
+
+        function AjaxCompare() {
+            return $.ajax({
+                url: '@Url.Action("Compare","Home")',
+                type: 'POST',
+                dataType: 'json',
+                data: $('#frmCompare').serialize()
+            });
+        }
+
+        function AjaxGetData(_url) {
+            return $.ajax({
+                url: _url,
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'X-Auth-Token': $('#txtToken').val()
+                }
+            });
+        }
+
+        function CompileData(_url) {
+            $.ajax({
+                url: _url,
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'X-Auth-Token': $('#txtToken').val()
+                },
+                success: function (data) {
+                    console.log(data);
+                }, 
+                error: function (xml, status, error) {
+                    console.log("Error: " + error); 
+                }
+            });
+        }
+
+        function CleanData(data) {
+            return data.replace(/\n/g, '<br>').replace(/[ ]/g, '&nbsp;');
+        }
+    </script>
+}
